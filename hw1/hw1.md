@@ -261,8 +261,103 @@ wal_recycle = off
 ## 6. Тестирование производительности после изменений
 
 ### Тест №1: 10 клиентов, 1 поток
+### 1) Запуск pgbench после изменения параметров в 1 поток 10 клиентов
 ```bash
 [postgres@tdb-txwb2 ~]\$ pgbench -P 1 -c 10 -T 10 postgres
 pgbench (17.5)
-starting vacuum...
+starting vacuum...end.
+progress: 1.0 s, 1241.9 tps, lat 7.718 ms stddev 5.345, 0 failed
+progress: 2.0 s, 1395.0 tps, lat 7.171 ms stddev 4.783, 0 failed
+progress: 3.0 s, 1359.0 tps, lat 7.340 ms stddev 4.781, 0 failed
+progress: 4.0 s, 1362.0 tps, lat 7.332 ms stddev 4.685, 0 failed
+progress: 5.0 s, 1355.1 tps, lat 7.369 ms stddev 5.059, 0 failed
+progress: 6.0 s, 1427.9 tps, lat 6.994 ms stddev 4.265, 0 failed
+progress: 7.0 s, 1353.0 tps, lat 7.383 ms stddev 4.756, 0 failed
+progress: 8.0 s, 1336.0 tps, lat 7.472 ms stddev 4.810, 0 failed
+progress: 9.0 s, 1389.0 tps, lat 7.174 ms stddev 4.804, 0 failed
+progress: 10.0 s, 1291.9 tps, lat 7.739 ms stddev 4.822, 0 failed
+transaction type: <builtin: TPC-B (sort of)>
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 1
+maximum number of tries: 1
+duration: 10 s
+number of transactions actually processed: 13521
+number of failed transactions: 0 (0.000%)
+latency average = 7.365 ms
+latency stddev = 4.818 ms
+initial connection time = 33.858 ms
+tps = 1354.813149 (without initial connection time)
 ```
+
+### 2) Запуск pgbench после изменения параметров в 4 потока 10 клиентов с установкой нового соединения
+```bash
+[postgres@tdb-txwb2 ~]\$ pgbench -P 1 -c 10 -j 4 -T 10 -C postgres
+pgbench (17.5)
+starting vacuum...end.
+progress: 1.0 s, 337.9 tps, lat 24.540 ms stddev 12.511, 0 failed
+progress: 2.0 s, 335.7 tps, lat 25.178 ms stddev 12.027, 0 failed
+progress: 3.0 s, 346.1 tps, lat 24.448 ms stddev 14.249, 0 failed
+progress: 4.0 s, 341.3 tps, lat 25.155 ms stddev 13.288, 0 failed
+progress: 5.0 s, 328.4 tps, lat 26.009 ms stddev 14.422, 0 failed
+progress: 6.0 s, 342.3 tps, lat 25.054 ms stddev 12.348, 0 failed
+progress: 7.0 s, 344.4 tps, lat 24.892 ms stddev 13.264, 0 failed
+progress: 8.0 s, 339.0 tps, lat 24.985 ms stddev 12.479, 0 failed
+progress: 9.0 s, 338.0 tps, lat 25.128 ms stddev 14.200, 0 failed
+progress: 10.0 s, 348.5 tps, lat 24.506 ms stddev 12.853, 0 failed
+transaction type: <builtin: TPC-B (sort of)>
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 4
+maximum number of tries: 1
+duration: 10 s
+number of transactions actually processed: 3410
+number of failed transactions: 0 (0.000%)
+latency average = 24.979 ms
+latency stddev = 13.196 ms
+average connection time = 4.351 ms
+tps = 340.551392 (including reconnection times)
+```
+
+### Отключение ACID для максимальной производительности
+```ini
+synchronous_commit = off
+fsync = off
+full_page_writes = off
+```
+
+```bash
+[postgres@tdb-txwb2 ~]\$ pgbench -P 1 -c 10 -j 4 -T 10 postgres
+pgbench (17.5)
+starting vacuum...end.
+progress: 1.0 s, 2675.9 tps, lat 3.686 ms stddev 2.133, 0 failed
+progress: 2.0 s, 2813.9 tps, lat 3.552 ms stddev 2.314, 0 failed
+progress: 3.0 s, 2760.8 tps, lat 3.619 ms stddev 2.246, 0 failed
+progress: 4.0 s, 2813.0 tps, lat 3.556 ms stddev 2.272, 0 failed
+progress: 5.0 s, 2827.4 tps, lat 3.528 ms stddev 2.200, 0 failed
+progress: 6.0 s, 2832.8 tps, lat 3.527 ms stddev 2.269, 0 failed
+progress: 7.0 s, 2832.9 tps, lat 3.530 ms stddev 2.225, 0 failed
+progress: 8.0 s, 2712.1 tps, lat 3.689 ms stddev 2.215, 0 failed
+progress: 9.0 s, 2754.8 tps, lat 3.629 ms stddev 2.377, 0 failed
+progress: 10.0 s, 2863.1 tps, lat 3.490 ms stddev 2.282, 0 failed
+transaction type: <builtin: TPC-B (sort of)>
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 4
+maximum number of tries: 1
+duration: 10 s
+number of transactions actually processed: 27896
+number of failed transactions: 0 (0.000%)
+latency average = 3.580 ms
+latency stddev = 2.257 ms
+initial connection time = 11.148 ms
+tps = 2789.995900 (without initial connection time)
+```
+
+### Выводы:
+* На синтетических тестах не удалось добиться разницы в TPS со стандартными и "потюненными" параметрами.
+* Отключение `synchronous_commit = off`, `fsync = off`, `full_page_writes = off` серьезно ускоряет работу БД. Думаю, что отключение в проде возможно для систем, где потеря данных не является критичной.
+

@@ -524,14 +524,14 @@ tps = 5442.020825 (without initial connection time)
 ![График select без пулера и с pgbouncer](noPooler_pgbouncer_select.png)
 ![График insert без пулера и с pgbouncer](noPooler_pgbouncer_insert.png)
 ![График select pgpoolII и с pgbouncer](pool_bouncer_select.png)
-![График select pgpoolII и с pgbouncer](pool2_bouncer_insert.png)
+![График insert pgpoolII и с pgbouncer](pool2_bouncer_insert.png)
 
 
 Выводы:
 
-1 Пулеры помогают поддерживать tps
-2 pg_bouncer чуть более производителен чем pgpool II(или не умею правильно настраивать pgpool II)
-3 Думаю что на пуллеры тажке нужно выделять CPU для улучшения производитедьности, не получится сделать пуллер на 4cpu и бд на 16cpu
-4 На будущее хотелось бы проверить работу 2х пуллеров: пуллер софтверный(например HikaryPool) + pg_bouncer, как они будут взаимодействовать
+- Пулеры помогают держать высокий tps
+- pgpool II чуть более производителен чем pg_bouncer(или не умею правильно настраивать pg_bouncer)
+- Думаю что на пуллеры тажке нужно выделять CPU для улучшения производитедьности, не получится сделать пуллер на 4cpu и бд на 16cpu
+- На будущее хотелось бы проверить работу 2х пуллеров: пуллер софтверный(например HikaryPool) + pg_bouncer, как они будут взаимодействовать
 
 
